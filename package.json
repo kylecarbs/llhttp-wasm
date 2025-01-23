@@ -1,0 +1,28 @@
+{
+  "name": "llhttp-wasm",
+  "version": "1.0.0",
+  "files": [
+    "out"
+  ],
+  "main": "out/index.js",
+  "types": "out/index.d.ts",
+  "author": {
+    "name": "Kyle Carberry",
+    "email": "kyle@carberry.com",
+    "url": "https://carberry.com"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun run build.ts",
+    "package": "bun run build.ts && npm pack"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
