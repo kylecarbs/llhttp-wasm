@@ -26,15 +26,17 @@ export class Parser {
   public headerValues: string[] = [];
   public statusMessage?: string;
 
+  private lastDataPointer?: number;
+
   constructor(private readonly pointer: number) {}
 
   // execute runs the parser on the given data.
   public execute(data: Uint8Array): number {
-    const ptr = instance.exports.malloc(data.length);
+    this.lastDataPointer = instance.exports.malloc(data.length);
     const u8 = new Uint8Array(instance.exports.memory.buffer);
-    u8.set(data, ptr);
-    const ret = instance.exports.llhttp_execute(this.pointer, ptr, data.length);
-    instance.exports.free(ptr);
+    u8.set(data, this.lastDataPointer);
+    const ret = instance.exports.llhttp_execute(this.pointer, this.lastDataPointer, data.length);
+    instance.exports.free(this.lastDataPointer);
     return ret;
   }
 
@@ -45,6 +47,25 @@ export class Parser {
       return undefined;
     }
     const ptr = instance.exports.llhttp_get_error_reason(this.pointer);
+    const u8 = new Uint8Array(instance.exports.memory.buffer);
+    const len = u8.indexOf(0, ptr) - ptr;
+    return cstr(ptr, len);
+  }
+
+  // getErrorPosition returns the number of bytes parsed before the error.
+  public getErrorPosition(): number {
+    if (!this.lastDataPointer) {
+      return 0;
+    }
+    return instance.exports.llhttp_get_error_pos(this.pointer) - this.lastDataPointer;
+  }
+
+  // getErrorName returns the `HPE_` name for a given error code.
+  public getErrorName(code: number): string | undefined {
+    if (code === constants.ERROR.OK) {
+      return undefined;
+    }
+    const ptr = instance.exports.llhttp_errno_name(code);
     const u8 = new Uint8Array(instance.exports.memory.buffer);
     const len = u8.indexOf(0, ptr) - ptr;
     return cstr(ptr, len);
@@ -230,6 +251,8 @@ let instance: WebAssembly.Instance & {
     llhttp_pause: (pointer: number) => void;
     llhttp_finish: (pointer: number) => number;
     llhttp_reset: (pointer: number) => void;
+    llhttp_errno_name: (err: number) => number;
+    llhttp_get_error_pos: (pointer: number) => number;
     free: (pointer: number) => void;
     _initialize: () => void;
   };

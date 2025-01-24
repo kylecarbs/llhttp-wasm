@@ -374,6 +374,13 @@ for (const t of cases) {
   });
 }
 
+test("error name", () => {
+  const parser = createParser(constants.TYPE.REQUEST);
+  const res = parser.execute(new TextEncoder().encode("GET / HaTTP/1.1\r\n\r\n"));
+  expect(parser.getErrorName(res)).toBe("HPE_INVALID_CONSTANT");
+  expect(parser.getErrorPosition()).toBe(7);
+});
+
 interface HttpTestCase {
   name: string;
   input: string[];
