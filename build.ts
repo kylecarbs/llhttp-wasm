@@ -1,6 +1,5 @@
 import { execSync } from "node:child_process";
-import { join } from "node:path";
-import { readFile, writeFile, access } from "node:fs/promises";
+import { access, readFile, writeFile } from "node:fs/promises";
 
 async function fileExists(path: string): Promise<boolean> {
   try {

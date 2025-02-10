@@ -3,11 +3,9 @@
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
-    "module": "ESNext",
+    "module": "NodeNext",
     "moduleDetection": "force",
     "allowJs": true,
-
-    "verbatimModuleSyntax": true,
 
     "outDir": "out",
     "declaration": true,
