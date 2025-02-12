@@ -15,10 +15,10 @@ export const createParser = (type: number): Parser => {
 // Parser is a wrapper around the llhttp WASM instance.
 export class Parser {
   // Override these to handle events from `execute`.
-  public onMessageBegin?: () => void;
-  public onHeadersComplete?: (msg: HeadersComplete) => void;
-  public onMessageComplete?: () => void;
-  public onBody?: (data: Uint8Array) => void;
+  public onMessageBegin?: () => number;
+  public onHeadersComplete?: (msg: HeadersComplete) => number;
+  public onMessageComplete?: () => number;
+  public onBody?: (data: Uint8Array) => number;
 
   // Set by the WASM while parsing.
   public url: string = "";
@@ -35,7 +35,11 @@ export class Parser {
     this.lastDataPointer = instance.exports.malloc(data.length);
     const u8 = new Uint8Array(instance.exports.memory.buffer);
     u8.set(data, this.lastDataPointer);
-    const ret = instance.exports.llhttp_execute(this.pointer, this.lastDataPointer, data.length);
+    const ret = instance.exports.llhttp_execute(
+      this.pointer,
+      this.lastDataPointer,
+      data.length
+    );
     instance.exports.free(this.lastDataPointer);
     return ret;
   }
@@ -57,7 +61,9 @@ export class Parser {
     if (!this.lastDataPointer) {
       return 0;
     }
-    return instance.exports.llhttp_get_error_pos(this.pointer) - this.lastDataPointer;
+    return (
+      instance.exports.llhttp_get_error_pos(this.pointer) - this.lastDataPointer
+    );
   }
 
   // getErrorName returns the `HPE_` name for a given error code.
@@ -143,7 +149,7 @@ const initializeWasm = () => {
         parser.headerFields = [];
         parser.headerValues = [];
         parser.statusMessage = undefined;
-        parser?.onMessageBegin?.();
+        return parser?.onMessageBegin?.() ?? 0;
       },
       wasm_on_url: (pointer: number, at: number, length: number) => {
         const parser = parsers[pointer];
@@ -196,33 +202,33 @@ const initializeWasm = () => {
           statusCode = instance.exports.llhttp_get_status_code(pointer);
           statusMessage = parser.statusMessage;
         }
-        parser.onHeadersComplete?.({
-          versionMajor,
-          versionMinor,
-          rawHeaders,
-          method,
-          url,
-          statusCode,
-          statusMessage,
-          upgrade,
-          shouldKeepAlive,
-        });
+        return (
+          parser.onHeadersComplete?.({
+            versionMajor,
+            versionMinor,
+            rawHeaders,
+            method,
+            url,
+            statusCode,
+            statusMessage,
+            upgrade,
+            shouldKeepAlive,
+          }) ?? 0
+        );
       },
       wasm_on_body: (pointer: number, at: number, length: number) => {
         const parser = parsers[pointer];
-        if (parser) {
-          parser.onBody?.(
+        return (
+          parser?.onBody?.(
             new Uint8Array(
               instance.exports.memory.buffer.slice(at, at + length)
             )
-          );
-        }
+          ) ?? 0
+        );
       },
       wasm_on_message_complete: (pointer: number) => {
         const parser = parsers[pointer];
-        if (parser) {
-          parser.onMessageComplete?.();
-        }
+        return parser?.onMessageComplete?.() ?? 0;
       },
     },
   }) as typeof instance;

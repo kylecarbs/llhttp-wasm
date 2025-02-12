@@ -343,10 +343,12 @@ for (const t of cases) {
           result.headers[msg.rawHeaders[i]] = msg.rawHeaders[i + 1];
         }
       }
+      return 0;
     };
 
     parser.onBody = (chunk) => {
       result.body += new TextDecoder().decode(chunk);
+      return 0;
     };
 
     const ret = parser.execute(new TextEncoder().encode(t.input.join("\r\n")));
